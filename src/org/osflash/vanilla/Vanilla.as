@@ -8,6 +8,8 @@ package org.osflash.vanilla {
 	import flash.utils.Dictionary;
 
 	public class Vanilla {
+		private static const TRUE : String = "true";
+		
 		private var _factory : IInjectionMapFactory;
 		private var _hash : Dictionary = new Dictionary();
 		private var _allowSimpleTypesConversion : Boolean = true;
@@ -170,6 +172,8 @@ package org.osflash.vanilla {
 		private function convertSimpleType(value : *, type : Class) : * {
 			if (value is String && (type == uint || type == int || type == Number)) {
 				return parseNumber(value, type);
+			} else if (value is String && type == Boolean) {
+				return String(value).toLowerCase() == TRUE; 
 			} else
 				return type(value);
 		}

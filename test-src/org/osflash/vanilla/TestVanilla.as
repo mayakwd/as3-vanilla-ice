@@ -234,10 +234,10 @@ package org.osflash.vanilla
 		public function simpleTypesConversion() : void {
 			_marshaller.allowSimpleTypesConversion = true;
 			
-			const source : Object = {a: "-4", b: "true", c: 1, d: "5.4e+10", e: "0xFF0044"};
+			const source : Object = {aInt: "-4", bBoolean: "false", cBoolean: 1, dNumber: "5.4e+10", eUInt: "0xFF0044"};
 			const result : SimpleTypesConversion = _marshaller.extract(source, SimpleTypesConversion);
 			assertEquals(-4, result.aInt);
-			assertEquals(true, result.bBoolean);
+			assertEquals(false, result.bBoolean);
 			assertEquals(true, result.cBoolean);
 			assertEquals(5.4e+10, result.dNumber);
 			assertEquals(0xFF0044, result.eUInt);
