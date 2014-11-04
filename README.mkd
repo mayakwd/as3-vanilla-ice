@@ -1,0 +1,246 @@
+AS3 Vanilla Ice
+===============
+
+This library was forked from ["AS3 Vanilla" of Jonny Reeves](https://github.com/jonnyreeves/as3-vanilla), and later was isolated as a separate version, because of 
+lots of changes in the core implementation.  
+
+A lightweight library which enables a developer to extract a strongly typed Model Object from a untyped dynamic object 
+without having to write a single line of parsing or marshalling code.  An example use case would be turning data 
+returned from a JSON endpoint into a Model, if you've ever written the following code, then you can benefit from this 
+library:
+
+```actionscript
+// Use a JSON library to convert a JSON String into an AS3 Object.
+var jsonObject : Object = JSON.decode('{"name":"Jonny", "age": 28, "music":["nin","mew"]}');
+
+// Copy all the data into a new PersonVO so the rest of the system can use it.
+var myPerson : PersonVO = new PersonVO();
+myPerson.name = jsonObject["name"];
+myPerson.age = jsonObject["age"];
+myPerson.music = jsonObject["music"];
+
+trace(myPerson.name) // Jonny.
+```
+
+Using the Vanilla library, you can turn the above code into this:
+
+```actionscript
+// Use a JSON library to convert a JSON String into an AS3 Object.
+var jsonObject : Object = JSON.decode('{"name":"Jonny", "age": 28, "music":["nin","mew"]}');
+
+// Use Vanilla to convert it into a PersonVO.
+var myPerson : PersonVO = new Vanilla().extract(jsonObject, PersonVO);
+
+trace(myPerson.name);  // "Jonny"
+```
+
+Things get even easier when you make use of the `extract` convenience method:
+
+```actionscript
+var jsonObject : Object = JSON.decode('{"name":"Jonny", "age": 28, "music":["nin","mew"]}');
+var myPerson : PersonVO = extract(jsonObject, PersonVO);
+```
+
+Got a complex object graph?  Well that's where Vanilla really shines, making light work of parsing and 
+marshalling nested objects, for example:
+
+```actionscript
+// The PersonVO Model contains an 'address' field which is a complex datatype (AddressVO).
+package app.model {
+	class PersonVO {
+		public var name : String;
+		public var address : AddressVO;
+	}
+}
+
+// Here's the class definition for AddressVO.
+package app.model {
+	class AddressVO {
+		public var line1 : String;
+		public var line2 : String;
+		public var city : String;
+	}
+}
+
+var jsonObject : Object = JSON.decode('{"name":"Jonny","address":{"line1":"My House","line2":"My Road","city":"London"}}');
+var myPerson : PersonVO = extract(jsonObject, PersonVO);
+
+trace(myPerson.address.city);	// "London"
+```
+
+Although Vanilla library does make use of Metadata, it is by no means required - the goal of this library
+is to make the marshalling as transparent and painless as possible; if the source Object's fields maps perfectly to
+the fields of your Model object (as in the example above) then everything should 'just work'(tm).
+
+
+Mapping Fields
+--------------
+Sometimes the fields on your Model object don't quite match up to the fields in your source object; not a problem, 
+you can use Metadata to define the mappings in your Model object:
+
+```actionscript
+package app.model {
+	public class PersonVO {
+		public var name : String;
+		public var age : uint;
+		[Marshall(field="music")] public var musicTastes : Array;
+	}
+}
+```
+
+
+Mapping to Constructor Arguments
+--------------------------------
+If you're a fan of immutable models then you will want to define some Metadata to map the fields in your source object
+to the constructor arguments of your Model object:
+
+```actionscript
+package app.model {
+	// Don't forget, constructor metadata is annotated to the class, not the constructor method!
+	[Marshall(field="name", field="age", field="music")]
+	public class PersonModel {
+		private var _name : String;
+		private var _age : uint;
+		private var _musicTastes : Array;
+	
+    	public function PersonModel(name, age, music : Array) {
+    		_name = name;
+    		_age = age;
+    		_music = music;
+    	}
+    }
+}
+```
+
+
+Mapping to Methods / Mutators
+-----------------------------
+You can map the fields of your source object to a setter method in your Model object:
+
+```actionscript
+package app.model {
+	public class PersonModel {
+		private var _name : String;
+		private var _age : uint;
+		private var _music : Array;
+		
+		[Marshall(field="name", field="age")]
+		public function init(name : String, age : uint) : void {
+			_name = name;
+			_age = age;
+		}
+		
+		[Marshall(field="music")]
+		public function setMusic(value : Array) : void {
+			_music = value;
+    }
+}
+```
+
+
+Ignoring fields
+-----------------------------
+You can ignore fields by using [Transient] metadata:
+
+```actionscript
+package app.model {
+	public class PersonModel {
+		[Transient]
+		public var name : String;
+		public var age : uint;
+	}
+}
+```
+The name field is ignored from the mapping but the age is not.
+
+
+Automatic Coercion
+------------------
+Vanilla will automatically coerce Arrays found in your source object into Vectors defined in your target Model
+Class, take the following example:
+
+```actionscript
+// The Target Model Class Definition.
+class app.model {
+	public class ColourList {
+		public var colours : Vector.<String>;
+	}
+}
+
+var source : Object = { colours: [ "red", "white", "blue" ] };
+var result : ColourList = extract(source, ColourList); 
+
+trace(result.colours);	// "red","white","blue"
+trace(getQualifiedClassName(result.colours));	// __AS3__.vec::Vector.<String>
+```
+
+If you aren't using Vectors in your project, then you will have to give Vanilla a hand and provide it with a type hint
+as to what the Array is expected to contain, for example:
+
+```actionscript
+// The Target Model Class Definition.
+class app.model {
+	public class Contact {
+		public var name : String;
+		
+		[Marshall (type="app.model.PhoneNumber")]
+		public var phoneNumbers : Array;
+	}
+}
+
+// A DTO which the Contact class makes use of.
+class app.model {
+	public class PhoneNumber {
+		public var number : Number;
+		public var type : String;
+	}
+}
+
+// Let's extract this JSON representation into a instance of the Contact model.
+var source : Object = { 
+	name: "Jonny", 
+	phoneNumbers: [ 
+		{ number: 114752471, type: "home" }, 
+		{ number: 12344122, type: "mobile" } 
+	] 
+};
+
+var result : Contact = extract(source, Contact); 
+trace(result.phoneNumbers); // [object PhoneNumber],[object PhoneNumber]
+trace((result.phoneNumbers[0] as PhoneNumber).type)	// "home".
+```
+
+Automatic simple types forced conversion
+----------------------------------------
+Vanilla will force conversion objects of simple types, if it's allowed by settings (and it's allowed by default),
+like in the following example:
+
+```actionscript
+class app.model {
+	public class SimpleTypeData {
+		public var a : int;
+		public var b : Boolean;
+		public var c : uint; 
+	}
+}
+
+var source : Object = {
+	a: "-4",
+	b: 1,
+	c: "0xFF0044"
+};
+
+var result : SimpleTypeData = extract(source, SimpleTypeData);
+trace(result.a); // -4
+trace(result.b); // true
+trace(result.c.toString(16)); // FF0044
+```
+
+Dependencies
+------------
+No dependencies.
+
+
+Future Features / Wish List
+---------------------------
+* Add extensions-based feature to convert special types like Enum and etc. 
