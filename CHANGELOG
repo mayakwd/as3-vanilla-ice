@@ -1,3 +1,7 @@
+== 1.1.0 / 2015-01-20
+
+* Added top-level vectors support with tests.
+
 == 1.0.0 / 2014-11-04
 
 * Initial release
