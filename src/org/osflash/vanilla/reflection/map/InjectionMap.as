@@ -4,6 +4,7 @@ package org.osflash.vanilla.reflection.map {
 		private var _constructorFields : Array = [];
 		private var _fields : Object = {};
 		private var _methods : Object = {};
+		private var _typedHint : Class;
 
 		public function addConstructorField(injectionDetails : InjectionDetail) : void
 		{
@@ -68,6 +69,14 @@ package org.osflash.vanilla.reflection.map {
 			
 			result += "]";
 			return result;
+		}
+
+		public function get typedHint() : Class {
+			return _typedHint;
+		}
+
+		public function set typedHint(vectorHint : Class) : void {
+			_typedHint = vectorHint;
 		}
 	}
 }

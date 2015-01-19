@@ -1,14 +1,15 @@
-package org.osflash.vanilla
-{
+package org.osflash.vanilla {
 	import org.flexunit.asserts.assertEquals;
 	import org.flexunit.asserts.assertNotNull;
 	import org.flexunit.asserts.assertTrue;
 	import org.osflash.vanilla.testdata.Address;
-	import org.osflash.vanilla.testdata.NumberVectorList;
-	import org.osflash.vanilla.testdata.NestedNumberVectorList;
 	import org.osflash.vanilla.testdata.NestedComplexVectorList;
+	import org.osflash.vanilla.testdata.NestedNumberVectorList;
+	import org.osflash.vanilla.testdata.NumberVectorList;
 	import org.osflash.vanilla.testdata.PersonWithMultipleAddressesVectorField;
 	import org.osflash.vanilla.testdata.StringVectorList;
+
+	import flash.geom.Point;
 
 	public class TestExtractVector
 	{
@@ -115,7 +116,29 @@ package org.osflash.vanilla
 
 			assertEquals("jonny", result.people[0][0].name);
 			assertEquals("Tomsk", result.people[0][1].address.city);
+		}
+		
+		[Test]
+		public function nested_asClass() : void {
+			const source : Array = 
+				[
+					[
+						{x: 1, y: -1},
+						{x: -1, y: 8}
+					],
+					[
+						{x: 0, y: 5},
+						{x: 5, y: 0}
+					]
+				];
+			const result : Vector.<Vector.<Point>> = extract(source, Vector.<Vector.<Point>> as Class);
+			
+			assertEquals(1, result[0][0].x);
+			assertEquals(-1, result[0][0].y) ;
 
+			assertEquals(5, result[1][1].x);
+			assertEquals(0, result[1][1].y) ;
+			
 		}
 	}
 }

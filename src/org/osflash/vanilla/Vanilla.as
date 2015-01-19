@@ -53,10 +53,12 @@ package org.osflash.vanilla {
 
 			var target : *;
 
-			if (ReflectionUtil.isSimpleObject(source) && _allowSimpleTypesConversion) {
+			const targetIsVector : Boolean = ReflectionUtil.isVector(targetType);
+
+			if (!targetIsVector && ReflectionUtil.isSimpleObject(source) && _allowSimpleTypesConversion) {
 				return convertSimpleType(source, targetType);
 			}
-
+			
 			// Construct an InjectionMap which tells us how to inject fields from the source object into
 			// the Target class.
 			var injectionMap : InjectionMap;
@@ -68,7 +70,13 @@ package org.osflash.vanilla {
 			}
 
 			// Create a new instance of the targetType; and then inject the values from the source object into it
+			
+			if (targetIsVector) {
+				return extractVector(source, targetType, injectionMap.typedHint);
+			}
+
 			target = ReflectionUtil.newInstance(targetType, fetchConstructorArgs(source, injectionMap.getConstructorFields()));
+			
 			injectFields(source, target, injectionMap);
 			injectMethods(source, target, injectionMap);
 
@@ -186,9 +194,13 @@ package org.osflash.vanilla {
 			return result;
 		}
 
-		private function extractVector(source : Array, targetVectorClass : Class, targetClassType : Class) : * {
+		
+		private static const LENGTH : String = "length";
+		private function extractVector(source : Object, targetVectorClass : Class, targetClassType : Class) : * {
 			const result : * = new targetVectorClass();
-			for (var i : uint = 0; i < source.length; i++) {
+			const length : int = source[LENGTH];
+			
+			for (var i : uint = 0; i < length; i++) {
 				if (ReflectionUtil.isVector(targetClassType)) {
 					const type : Class = ReflectionUtil.getVectorType(targetClassType);
 					result[i] = extractVector(source[i], targetClassType, type);

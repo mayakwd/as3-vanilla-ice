@@ -13,7 +13,6 @@ package org.osflash.vanilla.reflection.map.impl {
 		private static const METADATA_TAG : String = "Marshall";
 		private static const TRANSIENT_TAG : String = "Transient";
 		private static const FIELD : String = "field";
-
 		private static const TYPE : String = "type";
 		private static const FACTORY : String = "factory";
 		private static const METADATA : String = "metadata";
@@ -25,14 +24,18 @@ package org.osflash.vanilla.reflection.map.impl {
 		private static const ARG : String = "arg";
 		private static const TRUE : String = "true";
 		private static const READONLY : String = "readonly";
-		
+
 		public function buildForType(clazz : Class) : InjectionMap {
 			const factory : XML = describeType(clazz)[FACTORY][0];
 			const map : InjectionMap = new InjectionMap();
 
-			addCtorMapping(factory, map);
-			addFieldsMapping(factory, map);
-			addMethodsMapping(factory, map);
+			if (ReflectionUtil.isVector(clazz)) {
+				map.typedHint = ReflectionUtil.getVectorType(clazz);
+			} else {
+				addCtorMapping(factory, map);
+				addFieldsMapping(factory, map);
+				addMethodsMapping(factory, map);
+			}
 
 			System.disposeXML(factory);
 
@@ -42,7 +45,7 @@ package org.osflash.vanilla.reflection.map.impl {
 		private function addCtorMapping(factory : XML, map : InjectionMap) : void {
 			var constructor : XML = factory[CONSTRUCTOR][0];
 			var metaData : XML = factory[METADATA].(@name == METADATA_TAG)[0];
-			
+
 			var detail : InjectionDetail;
 			if (metaData && constructor) {
 				var fields : XMLList = metaData[ARG].(@key == FIELD);
@@ -85,9 +88,7 @@ package org.osflash.vanilla.reflection.map.impl {
 			const length : uint = variables.length();
 			if (length > 0) {
 				for each (variable in variables) {
-					var isTransient : Boolean = 
-						variable[METADATA].(@name == TRANSIENT_TAG).length() > 0 || 
-						variable.@access == READONLY;
+					var isTransient : Boolean = variable[METADATA].(@name == TRANSIENT_TAG).length() > 0 || variable.@access == READONLY;
 
 					if (isTransient) continue;
 
@@ -131,7 +132,7 @@ package org.osflash.vanilla.reflection.map.impl {
 
 					var field : XML;
 					var parameter : XML;
-					
+
 					if (fields.length() > 0) {
 						var i : uint;
 						for (i = 0; i < fields.length(); i++) {
