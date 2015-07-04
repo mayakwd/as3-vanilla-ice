@@ -9,7 +9,6 @@ package org.osflash.vanilla {
 
 	public class Vanilla {
 		private static const TRUE : String = "true";
-		
 		private var _factory : IInjectionMapFactory;
 		private var _hash : Dictionary = new Dictionary();
 		private var _allowSimpleTypesConversion : Boolean = true;
@@ -58,7 +57,7 @@ package org.osflash.vanilla {
 			if (!targetIsVector && ReflectionUtil.isSimpleObject(source) && _allowSimpleTypesConversion) {
 				return convertSimpleType(source, targetType);
 			}
-			
+
 			// Construct an InjectionMap which tells us how to inject fields from the source object into
 			// the Target class.
 			var injectionMap : InjectionMap;
@@ -70,13 +69,13 @@ package org.osflash.vanilla {
 			}
 
 			// Create a new instance of the targetType; and then inject the values from the source object into it
-			
+
 			if (targetIsVector) {
 				return extractVector(source, targetType, injectionMap.typedHint);
 			}
 
 			target = ReflectionUtil.newInstance(targetType, fetchConstructorArgs(source, injectionMap.getConstructorFields()));
-			
+
 			injectFields(source, target, injectionMap);
 			injectMethods(source, target, injectionMap);
 
@@ -93,13 +92,13 @@ package org.osflash.vanilla {
 		}
 
 		/**
-		 * @param target		Target where you wish to update properties
 		 * @param source		Object which contains properties that you wish to update in target 
+		 * @param target		Target where you wish to update properties
 		 * @return				An target with update properties
 		 */
-		public function update(target : *, source : Object) : * {
+		public function extractTo(source : Object, target : *) : * {
 			const targetType : Class = Object(target).constructor as Class;
-			if (!targetType) throw TypeError("Can't extract type for \"updateItem\"");
+			if (!targetType) throw TypeError("Can't extract type for \"" + target + "\"");
 
 			var injectionMap : InjectionMap;
 
@@ -181,7 +180,7 @@ package org.osflash.vanilla {
 			if (value is String && (type == uint || type == int || type == Number)) {
 				return parseNumber(value, type);
 			} else if (value is String && type == Boolean) {
-				return String(value).toLowerCase() == TRUE; 
+				return String(value).toLowerCase() == TRUE;
 			} else
 				return type(value);
 		}
@@ -194,12 +193,12 @@ package org.osflash.vanilla {
 			return result;
 		}
 
-		
 		private static const LENGTH : String = "length";
+
 		private function extractVector(source : Object, targetVectorClass : Class, targetClassType : Class) : * {
 			const result : * = new targetVectorClass();
 			const length : int = source[LENGTH];
-			
+
 			for (var i : uint = 0; i < length; i++) {
 				if (ReflectionUtil.isVector(targetClassType)) {
 					const type : Class = ReflectionUtil.getVectorType(targetClassType);

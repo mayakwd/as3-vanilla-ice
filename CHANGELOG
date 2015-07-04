@@ -1,3 +1,7 @@
+== 1.1.1 / 2015-07-04
+
+* Added extractTo method and top-level function. 
+
 == 1.1.0 / 2015-01-20
 
 * Added top-level vectors support with tests.
