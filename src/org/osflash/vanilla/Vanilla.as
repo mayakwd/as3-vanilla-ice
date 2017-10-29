@@ -172,6 +172,8 @@ package org.osflash.vanilla {
 					}
 				}
 			}
+			else if (injectionDetail.type == Number && _allowSimpleTypesConversion)
+				value = parseFloat(value);
 
 			return value;
 		}
